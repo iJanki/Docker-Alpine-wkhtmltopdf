@@ -1,0 +1,10 @@
+--- ./mkspecs/linux-g++/qmake.conf.orig
++++ ./mkspecs/linux-g++/qmake.conf
+@@ -12,4 +12,7 @@
+ include(../common/linux.conf)
+ include(../common/gcc-base-unix.conf)
+ include(../common/g++-unix.conf)
++
++QMAKE_CXXFLAGS          = $$QMAKE_CFLAGS -std=gnu++98
++
+ load(qt_config)

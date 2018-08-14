@@ -1,26 +1,27 @@
-FROM alpine:edge
-MAINTAINER Trevor Ferre <trevor@alloylab.com>
+FROM alpine:3.8
+MAINTAINER Daniele Cesarini <daniele.cesarini@gmail.com>
 
-# install qt build packages #
-RUN echo "http://dl-4.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
 RUN apk add --update \
-	git patch gtk+ openssl glib fonts-base fonts-extra \
-	make g++ glib-dev gtk+-dev mesa-dev openssl-dev
+	git patch gtk+ openssl glib \
+	make g++ glib-dev gtk+-dev mesa-dev openssl-dev \
+	mkfontscale mkfontdir fontconfig font-util libx11 glib libxrender libxext libintl \
+	ttf-dejavu ttf-droid ttf-freefont ttf-liberation ttf-ubuntu-font-family
 RUN rm -rf /var/cache/apk/*
 	
-# wkhtmltopdf #
 RUN git clone --recursive https://github.com/wkhtmltopdf/wkhtmltopdf.git /tmp/wkhtmltopdf
 
 COPY conf/qt-musl.patch /tmp/wkhtmltopdf/qt/qt-musl.patch
 COPY conf/qt-musl-iconv-no-bom.patch /tmp/wkhtmltopdf/qt/qt-musl-iconv-no-bom.patch
 COPY conf/qt-recursive-global-mutex.patch /tmp/wkhtmltopdf/qt/qt-recursive-global-mutex.patch
 COPY conf/qt-font-pixel-size.patch /tmp/wkhtmltopdf/qt/qt-font-pixel-size.patch
+COPY conf/qt-fix-specs.patch /tmp/wkhtmltopdf/qt/qt-fix-specs.patch
 
 RUN	cd /tmp/wkhtmltopdf/qt && \
 	patch -p1 -i qt-musl.patch && \
 	patch -p1 -i qt-musl-iconv-no-bom.patch && \
 	patch -p1 -i qt-recursive-global-mutex.patch && \
 	patch -p1 -i qt-font-pixel-size.patch && \
+	patch -p1 -i qt-fix-specs.patch && \
 	sed -i "s|-O2|$CXXFLAGS|" mkspecs/common/g++.conf && \
 	sed -i "/^QMAKE_RPATH/s| -Wl,-rpath,||g" mkspecs/common/g++.conf && \
 	sed -i "/^QMAKE_LFLAGS\s/s|+=|+= $LDFLAGS|g" mkspecs/common/g++.conf && \
@@ -72,7 +73,6 @@ RUN	cd /tmp/wkhtmltopdf/qt && \
 	make install && \
 	rm -rf /tmp/*
 
-# remove qt build packages #
 RUN apk del --update \
 	make g++ glib-dev gtk+-dev mesa-dev openssl-dev
 RUN rm -rf /var/cache/apk/*
